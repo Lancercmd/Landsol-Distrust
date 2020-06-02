@@ -9,7 +9,7 @@ except ImportError:
     import json
 
 bot = nonebot.get_bot()
-SUPERUSERS = bot.config.SUPERUSERS[0]
+SUPERUSERS = bot.config.SUPERUSERS[0]  # 您可以将此处改为列表，并对相关代码进行更改
 
 MONTH_NAME = ('睦月', '如月', '弥生','卯月', '皐月', '水無月','文月', '葉月', '長月','神無月', '霜月', '師走')
 
@@ -52,20 +52,15 @@ NOT_FOUND = '没有找到这条记录~'
 @on_command('landsol_distrust', aliases=('/ld'), only_to_me=False)  # 兰德索尔失信人员名单
 async def landsol_distrust(session:CommandSession):
     global CACHE, DATA, FLAG
-
     message = ''
     uid = str(session.event.user_id)
-
     if session.event.detail_type != 'group':
         await session.finish(GROUP_ONLY)
-
-    if session.current_arg != 'y':
-        
+    if session.current_arg != 'y':        
         INPUT = session.current_arg
         CACHE = INPUT
         if INPUT == '':
-            await session.finish(FORMAT)
-        
+            await session.finish(FORMAT)        
         L_INPUT = INPUT.split(' ', 3)
         if L_INPUT[0] == '-a':
             try:
@@ -84,11 +79,9 @@ async def landsol_distrust(session:CommandSession):
                 if FLAG == True:
                     FLAG = False
                     return
-                await session.finish(A_FORMAT)
-    
+                await session.finish(A_FORMAT)    
             with open(DISTRUST, 'r', encoding='utf-8') as file:
                 DATA = json.load(file)
-
             if id in DATA[sid]:
                 FLAG = True
                 confirm = session.get('message', prompt=f'ID {id} 已存在于兰德索尔失信人员名单~\n{DATA[sid][id]}\n※ 回复 y 更新此 ID 的不良行为~\n※ 回复其他内容取消操作~')
@@ -106,18 +99,14 @@ async def landsol_distrust(session:CommandSession):
                     sid = 'TW'
                 id = L_INPUT[2]
             except IndexError:
-                await session.finish(F_FORMAT)
-    
+                await session.finish(F_FORMAT)    
             with open(DISTRUST, 'r', encoding='utf-8') as file:
-                DATA = json.load(file)
-            
+                DATA = json.load(file)            
             if id in DATA[sid]:
                 await session.finish(DATA[sid][id])
             else:
                 await session.finish(f'没有找到 ID {id} 的记录~')
-
-    INPUT = CACHE
-        
+    INPUT = CACHE        
     L_INPUT = INPUT.split(' ', 3)
     if L_INPUT[1] == 'CN' or L_INPUT[1] == 'Cn' or L_INPUT[1] == 'cN' or L_INPUT[1] == 'cn':
         sid = 'CN'
@@ -129,26 +118,27 @@ async def landsol_distrust(session:CommandSession):
         sid = 'QQ'
     if L_INPUT[1] == 'TW' or L_INPUT[1] == 'Tw' or L_INPUT[1] == 'tW' or L_INPUT[1] == 'tw':
         sid = 'TW'
-    id, notes = L_INPUT[2], L_INPUT[3]
-        
-    year = int(datetime.datetime.now().strftime('%Y'))
+    id, notes = L_INPUT[2], L_INPUT[3]        
+    year = int(datetime.datetime.now().strftime('%Y'))  # 未使用，可酌情删除
     month = int(datetime.datetime.now().strftime('%m'))-1
     day = int(datetime.datetime.now().strftime('%d'))-1
     hour = int(datetime.datetime.now().strftime('%H'))
     minute = int(datetime.datetime.now().strftime('%M'))
     time = f'{MONTH_NAME[month]}{DATE_NAME[day]} · {NUM_NAME[hour]}{NUM_NAME[minute]}'
-
-    DATA[sid][id] = f'(待审核){time}\n{notes}\n'
-    message += f'{time}\n(待审核)\n失信人员 ID {id}\n区服 {sid}\n上报事由 {notes}\n'
-
+    DATA[sid][id] = f'(待审核){time}\n{notes}'
+    if sid == 'QQ':
+        message += f'{time}\n(待审核)\n失信人员 QQ {id}\n上报事由 {notes}'
+    else:
+        message += f'{time}\n(待审核)\n失信人员 ID {id}\n区服 {sid}\n上报事由 {notes}'
     with open(DISTRUST, 'w', encoding='utf-8') as file:
         json.dump(DATA, file, ensure_ascii=False, indent=4)
-
     info = await bot.get_stranger_info(user_id=uid)  # 获取个人资料
     username = info['nickname']  # 获取昵称
-
-    message += f'※ 申诉请前往 https://github.com/Lancercmd/Landsol-Distrust 或使用优妮来杯咖啡'  # 来杯咖啡，联动 IceCirno / HoshinoBot https://github.com/Ice-Cirno/HoshinoBot
-    await session.bot.send_private_msg(user_id = SUPERUSERS, message = f'有新的失信人员进入审核~\n(待审核){time}\n失信人员 ID {id}\n区服 {sid}\n上报事由 {notes}\n※ 本条记录由 {username}({uid}) 上报~')  # 向主人发送私聊记录，仅向主人展示上报者的身份以保密
+    message += f'\n※ 申诉请前往 https://github.com/Lancercmd/Landsol-Distrust 或使用优妮来杯咖啡'  # 来杯咖啡，联动 IceCirno / HoshinoBot https://github.com/Ice-Cirno/HoshinoBot
+    if sid == 'QQ':
+        await session.bot.send_private_msg(user_id = SUPERUSERS, message = f'有新的失信人员进入审核~\n(待审核){time}\n失信人员 QQ {id}\n上报事由 {notes}\n※ 本条记录由 {username}({uid}) 上报~')
+    else:
+        await session.bot.send_private_msg(user_id = SUPERUSERS, message = f'有新的失信人员进入审核~\n(待审核){time}\n失信人员 ID {id}\n区服 {sid}\n上报事由 {notes}\n※ 本条记录由 {username}({uid}) 上报~')  # 向主人发送私聊记录，仅向主人展示上报者的身份以保密
     #####################################################
     #============此处可以向审核们推送message============#
     #####################################################
